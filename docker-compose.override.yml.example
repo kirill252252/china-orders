@@ -1,0 +1,34 @@
+# docker-compose.override.yml.example
+# Скопируйте в docker-compose.override.yml для локальных изменений (не коммитить в git)
+# Этот файл автоматически подхватывается docker compose
+
+version: '3.8'
+
+services:
+  # Пример: проброс портов БД наружу для GUI-клиентов (DBeaver, pgAdmin)
+  # postgres:
+  #   ports:
+  #     - "5433:5432"  # другой порт, чтобы не конфликтовать с локальным Postgres
+
+  # Пример: отключение frontend в Docker, если запускаете его локально через `npm run dev`
+  # frontend:
+  #   profiles: ["with-frontend"]
+
+  # Пример: хот-релоад бэкенда через nodemon (требует установки nodemon в devDependencies)
+  # backend:
+  #   command: npm run dev
+  #   environment:
+  #     NODE_ENV: development
+
+  # Пример: дополнительные переменные для локальной разработки
+  # backend:
+  #   environment:
+  #     LOG_LEVEL: debug
+  #     DEBUG: "express:*,pg:*"
+
+  # Пример: подключение локальной папки с миграциями для запуска вне Docker
+  # backend:
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules
+  #     - ./backend/migrations:/app/migrations:ro
