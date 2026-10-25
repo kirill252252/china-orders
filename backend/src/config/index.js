@@ -37,7 +37,9 @@ const envSchema = z.object({
   RATE_LIMIT_IMPORT_MAX: z.coerce.number().default(20),
   RATE_LIMIT_IMPORT_WINDOW_MS: z.coerce.number().default(60000),
 
-  MOCK_PROVIDER_ENABLED: z.coerce.boolean().default(true),
+    MOCK_PROVIDER_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+    // Лог SQL-запросов: только при DEBUG_SQL=true
+  DEBUG_SQL: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
 });
 
 const parsed = envSchema.safeParse(process.env);

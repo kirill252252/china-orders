@@ -21,7 +21,7 @@ pool.on('error', (err) => {
 export async function query(text, params) {
   const start = Date.now();
   const res = await pool.query(text, params);
-  if (config.NODE_ENV === 'development') {
+  if (config.DEBUG_SQL) {
     console.log('📝 Query:', { text: text.substring(0, 100), duration: Date.now() - start, rows: res.rowCount });
   }
   return res;
