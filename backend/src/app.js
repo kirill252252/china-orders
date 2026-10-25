@@ -17,6 +17,8 @@ import calcRoutes from './modules/calc/calc.routes.js';
 import profileRoutes from './modules/profile/profile.routes.js';
 
 const app = express();
+// За reverse-proxy (nginx, облако) берём реальный IP клиента для лимитов
+app.set('trust proxy', 1);
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -53,7 +55,6 @@ app.use(errorHandler);
 
 export async function startServer() {
   await redis.connect();
-  console.log('🔴 Redis connected');
 
   const server = app.listen(config.PORT, () => {
     console.log(`🚀 Server running on port ${config.PORT} (${config.NODE_ENV})`);
