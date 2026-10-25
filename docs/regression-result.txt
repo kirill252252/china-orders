@@ -1,6 +1,6 @@
 ﻿china-orders regression test
-date: 2026-10-25 20:44
-TOTAL: OK=229 FAIL=0  (seconds: 41)
+date: 2026-10-25 20:55
+TOTAL: OK=229 FAIL=0  (seconds: 45)
 
 == preflight
 OK    health 200

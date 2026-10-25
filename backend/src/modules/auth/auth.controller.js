@@ -2,7 +2,7 @@
 // Все ответы следуют единому формату: { success, data, error }.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { registerUser, loginUser, getUserById } from './auth.service.js';
-import { storeRefreshToken, isRefreshTokenValid, revokeRefreshToken, revokeAllUserTokens, REFRESH_TTL_SECONDS } from '../../utils/jwt.js';
+import { storeRefreshToken, isRefreshTokenValid, revokeRefreshToken, revokeAllUserTokens, markRefreshTokenUsed, getUsedRefreshTokenUser, REFRESH_TTL_SECONDS } from '../../utils/jwt.js';
 import { verifyRefresh, signAccessToken, signRefreshToken } from '../../utils/tokens.js';
 import { AppError } from '../../utils/errors.js';
 import { query } from '../../config/db.js';
@@ -66,6 +66,11 @@ export const refresh = asyncHandler(async (req, res) => {
   const jti = payload.jti;
 
   if (!(await isRefreshTokenValid(jti))) {
+    // Токен уже обменян: возможна кража, отзываем все сессии пользователя
+    const reusedBy = await getUsedRefreshTokenUser(jti);
+    if (reusedBy) {
+      await revokeAllUserTokens(reusedBy);
+    }
     res.clearCookie('refresh_token', { path: '/api/v1/auth' });
     throw AppError.unauthorized('Сессия недействительна');
   }
@@ -87,6 +92,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
   // Ротация: отзываем старый jti, создаём новый
   await revokeRefreshToken(jti);
+  await markRefreshTokenUsed(jti, user.id);
   const newJti = crypto.randomUUID();
   const newAccessToken = signAccessToken({ id: user.id, role: user.role });
   const newRefreshToken = signRefreshToken({ id: user.id }, newJti);

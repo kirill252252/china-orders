@@ -63,3 +63,16 @@ export async function revokeAllUserTokens(userId) {
   multi.del(KEY_PREFIXES.userJtiSet(userId));
   await multi.exec();
 }
+
+// Метка «токен уже обменян при ротации»: нужна, чтобы отличить повторное
+// использование старого токена (возможная кража) от просроченного.
+const usedKey = (jti) => `auth:used:${jti}`;
+
+export async function markRefreshTokenUsed(jti, userId, ttlSeconds = REFRESH_TTL_SECONDS) {
+  await redis.setex(usedKey(jti), ttlSeconds, String(userId));
+}
+
+// Возвращает userId, если токен уже обменивали, иначе null
+export async function getUsedRefreshTokenUser(jti) {
+  return await redis.get(usedKey(jti));
+}
