@@ -10,10 +10,7 @@
     "migrate:up": "node scripts/migrate.js up",
     "migrate:down": "node scripts/migrate.js down",
     "migrate:create": "node scripts/migrate.js create",
-    "seed": "node scripts/seed.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -27,11 +24,7 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5"
   },
-  "devDependencies": {
-    "vitest": "^2.0.0",
-    "supertest": "^7.0.0",
-    "@vitest/coverage-v8": "^2.0.0"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=20.0.0"
   }

@@ -27,8 +27,11 @@ export const orderIdSchema = z.object({
   }),
 });
 
-// Схема оплаты заказа (пустое тело)
+// Схема оплаты заказа
 export const orderPaySchema = z.object({
+  params: z.object({
+    id: z.string().regex(/^\d+$/, 'ID заказа должен быть числом'),
+  }),
   body: z.object({}),
 });
 

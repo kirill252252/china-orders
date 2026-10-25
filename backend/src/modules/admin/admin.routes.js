@@ -64,7 +64,20 @@ router.post('/tariffs', ...adminOnly, validate(createTariffSchema), createTariff
  * @description Обновить тариф доставки
  * @access Admin
  */
+router.patch('/tariffs/:id', ...adminOnly, validate(updateTariffSchema), updateTariff);
+
+/**
+ * @route PATCH /api/v1/admin/users/:id
+ * @description Обновить пользователя (роль и/или активность); изменения администраторов только главным
+ * @access Admin
+ */
 router.patch('/users/:id', ...adminOnly, validate(updateUserSchema), guardAdminChanges, updateUser);
+
+/**
+ * @route GET /api/v1/admin/access
+ * @description Права текущего администратора (главный или обычный)
+ * @access Admin
+ */
 router.get('/access', ...adminOnly, getAccess);
 
 /**
@@ -73,13 +86,6 @@ router.get('/access', ...adminOnly, getAccess);
  * @access Admin
  */
 router.get('/users', ...adminOnly, validate(listUsersSchema), listUsers);
-
-/**
- * @route PATCH /api/v1/admin/users/:id
- * @description Обновить пользователя (роль и/или активность)
- * @access Admin
- */
-router.patch('/users/:id', ...adminOnly, validate(updateUserSchema), updateUser);
 
 /**
  * @route GET /api/v1/admin/stats

@@ -23,7 +23,7 @@ function generateOrderNumber() {
 async function readOrder(orderId, client) {
   const orderRes = await client.query(
     `SELECT o.id, o.order_number, o.subtotal_cny, o.exchange_rate_used, o.commission_percent,
-            o.delivery_cost_rub, o.total_rub, o.customer_comment, o.manager_comment, o.created_at,
+            o.delivery_cost_rub, o.total_rub, o.customer_comment, o.created_at,
             s.code AS status_code, s.name_ru AS status_name,
             a.id AS address_id, a.type AS address_type, a.country, a.region, a.city,
             a.street, a.building, a.apartment, a.postal_code
@@ -54,7 +54,6 @@ async function readOrder(orderId, client) {
     deliveryCostRub: Number(o.delivery_cost_rub),
     totalRub: Number(o.total_rub),
     customerComment: o.customer_comment,
-    managerComment: o.manager_comment || '',
     createdAt: o.created_at,
     items: itemsRes.rows.map((r) => ({
       productId: r.product_id,

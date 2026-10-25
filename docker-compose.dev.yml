@@ -23,7 +23,7 @@ services:
     container_name: china_orders_redis_dev
     command: >
       sh -c 'if [ -n "$$REDIS_PASSWORD" ] && [ "$$REDIS_PASSWORD" != "" ]; then
-        exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD";
+        exec redis-server --appendonly yes;
       else
         exec redis-server --appendonly yes;
       fi'

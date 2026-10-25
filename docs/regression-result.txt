@@ -1,0 +1,264 @@
+﻿china-orders regression test
+date: 2026-10-25 19:39
+TOTAL: OK=229 FAIL=0  (seconds: 50)
+
+== preflight
+OK    health 200
+OK    tokens for four users
+OK    baseline: seed tariffs 1..3 active
+OK    baseline: no extra active tariffs
+OK    baseline: rate 12.5 and commission 5
+
+== auth
+OK    me: no token 401
+OK    me: customer2 data
+OK    login: wrong password 401
+OK    login: unknown user 401
+OK    login: no email 400
+OK    register: short password 400
+OK    register: duplicate email rejected
+OK    session: login returns token
+OK    session: refresh 200
+OK    session: refresh again (rotation) 200
+OK    session: logout ok
+OK    session: refresh after logout rejected
+OK    access: customer blocked from manager and admin
+OK    access: manager blocked from admin, orders list, addresses
+
+== catalog and personal list
+OK    list: 200 with pagination
+OK    list: item fields
+OK    list: limit=101 gives 400
+OK    list: sort price_asc
+OK    search: % is literal
+OK    cache: MISS then HIT
+OK    detail: 200, id is string, marketplace name
+OK    detail: abc 400, missing 404
+OK    import: no token 401
+OK    import: unknown url 400
+OK    import: fake host 400
+OK    import: 201 created
+OK    import: repeat 200, same id, created false
+OK    import: one product row
+OK    cache: dropped after import
+OK    mine: contains imported product
+OK    mine: no token 401
+OK    manual: 201
+OK    manual: unknown marketplace 400
+OK    manual: price 0 gives 400
+OK    mine: search finds manual product
+OK    mine: delete id abc 400
+OK    mine: delete foreign link 404
+OK    mine: delete own 200
+OK    mine: delete again 404
+OK    mine: product itself stays in catalog
+
+== calc
+OK    calc: 18060 + 384 = 18444
+OK    calc: single item 9372
+OK    calc: heavy parcel uses tariff 5+ kg
+OK    calc: validation 400
+
+== cart
+OK    cart: empty at start, totals zero
+OK    cart: no token 401
+OK    cart: add 2 pcs = 18060 + 384
+OK    cart: repeat add makes one row, qty 5
+OK    cart: other attributes make second row
+OK    cart: limit 99 gives 400
+OK    cart: rolled back after limit error (5 + 1)
+OK    cart: validation 400
+OK    cart: unknown product 404
+OK    cart: patch quantity
+OK    cart: patch 0 gives 400, missing 404
+OK    cart: foreign patch and delete 404
+OK    cart: other user cart stays empty
+OK    cart: delete item
+OK    cart: clear
+OK    cart: price change flagged, total kept at old price
+
+== addresses
+OK    addresses: no token 401, manager 403
+OK    addresses: list with one default first
+OK    addresses: validation 400
+OK    addresses: create 201, not default
+OK    addresses: duplicate 409
+OK    addresses: create as default, still one default
+OK    addresses: set default foreign 404, abc 400
+OK    addresses: set default 200
+OK    addresses: delete foreign 404
+OK    addresses: delete default 200, another default remains
+
+== orders and payment
+OK    order: empty cart 400
+OK    order: no token 401, manager 403
+OK    order: bad addressId 400
+OK    order: foreign address 404
+OK    order: rollback keeps cart and creates nothing
+OK    order: 201, status new
+OK    order: number format
+OK    order: 1376 CNY, delivery 384, total 18444
+OK    order: snapshot rate 12.5 and commission 5
+OK    order: address in response
+OK    order: no managerComment for customer in POST response
+OK    order: cart emptied
+OK    order: tariff and rate ids saved
+OK    order: first history row has the owner
+OK    order: ordered product left personal list
+OK    order get: address and one timeline row
+OK    order get: no managerComment, no staff ids
+OK    order get: foreign customer 404
+OK    order get: missing 404, abc 400
+OK    order get: manager sees customer contacts
+OK    order list: newest first, own only
+OK    order list: status filter
+OK    order list: limit=100 gives 400, manager 403
+OK    pay: no token 401, manager 403, abc 400
+OK    pay: foreign order 404
+OK    pay: order still new after refusals
+OK    pay: 200, paid, paidAt, address kept
+OK    pay: timeline new, awaiting_payment, paid
+OK    pay: history rows carry the customer id
+OK    pay: one successful mock payment equal to total
+OK    pay: repeat 409, still one payment
+OK    addresses: address used in an order cannot be deleted (409)
+OK    double submit: exactly one 201, others 400
+OK    double submit: one order created
+OK    parallel pay: one 200, two 409
+OK    parallel pay: one payment
+
+== manager
+OK    queue: no token 401, customer 403
+OK    queue: 200, only queue statuses, contacts present
+OK    queue: validation 400
+OK    queue: admin allowed
+OK    status: no token 401, customer 403
+OK    status: missing 404, abc 400, unknown 400
+OK    status: manual paid and new rejected 409
+OK    status: skipping stages rejected 409
+OK    shipment: not allowed for paid order 409
+OK    status: purchased 200
+OK    status: history has manager id and comment
+OK    status: same status again 409
+OK    shipment: no token 401, customer 403
+OK    shipment: empty body, bad carrier, negative weight 400
+OK    shipment: nothing saved after refusals
+OK    shipment: created
+OK    shipment: declared value equals subtotal
+OK    shipment: partial update by admin keeps tracking
+OK    shipment: actual weight does not change order total
+OK    shipment: customer sees tracking
+OK    comment: customer 403, too long 400, missing 404
+OK    comment: saved, visible to staff only
+OK    chain: shipped_from_china
+OK    chain: in_transit by admin
+OK    chain: arrived_warehouse
+OK    chain: delivered, completed_at set
+OK    chain: 8 history rows, no change after delivery
+OK    cancel: without reason 400, order still paid
+OK    cancel: with reason 200, cancelled_at, reason in history
+OK    cancel: no further changes, no shipment
+
+== admin: access
+OK    admin /admin/rates : 401 without token, 403 for customer and manager
+OK    admin /admin/rates/current : 401 without token, 403 for customer and manager
+OK    admin /admin/settings/commission : 401 without token, 403 for customer and manager
+OK    admin /admin/tariffs : 401 without token, 403 for customer and manager
+OK    admin /admin/users : 401 without token, 403 for customer and manager
+OK    admin /admin/stats : 401 without token, 403 for customer and manager
+OK    admin /admin/access : 401 without token, 403 for customer and manager
+
+== admin: rate and commission
+OK    rate 0 rejected 400
+OK    rate -1 rejected 400
+OK    rate 1001 rejected 400
+OK    rate abc rejected 400
+OK    rate: nothing added after bad requests
+OK    rates list: pagination, limit=101 gives 400
+OK    rate 13: 201, active, manual
+OK    rate 13: one active row, old rows closed
+OK    rate 13: current
+OK    snapshot: old order keeps rate 12.5 and total 18444
+OK    cart uses new rate (9391.20)
+OK    order ignores cached rate, uses DB rate 13
+OK    cache: dropped after rate change
+OK    parallel rate changes: all 201, one active row
+OK    rate restored to 12.5
+OK    commission: get 5
+OK    commission: -1, 101, abc, 5.123 rejected 400
+OK    commission: unchanged after refusals
+OK    commission 7.5 saved
+OK    cart uses commission 7.5 (9245)
+
+== admin: tariffs
+OK    tariffs: seed list, last without upper bound
+OK    tariffs: max <= min and negative price rejected 400
+OK    tariffs: open-ended seed tariff blocks overlap 409
+OK    tariffs: seed tariff 3 limited to 1000
+OK    tariffs: create 201
+OK    tariffs: duplicate name 409
+OK    tariffs: overlap 409
+OK    tariffs: adjacent interval allowed, boundary 4000 belongs to it
+OK    tariffs: inactive overlapping tariff created
+OK    tariffs: activating overlapping 409, stays inactive
+OK    tariffs: partial patch keeps other fields
+OK    tariffs: patch validation (max<min 400, abc 400, missing 404, empty 400)
+OK    tariffs: no delete route
+OK    tariffs: changed base price reaches cart (442)
+OK    tariffs: cart without suitable tariff gives 422
+
+== admin: users and main administrator
+OK    users: list with fields
+OK    users: no password or hash in response
+OK    users: limit=101 and role=xxx give 400
+OK    users: role filter and total match DB
+OK    users: search q=% is literal
+OK    main admin: admin@ is the only main administrator
+OK    users: patch validation (abc 400, missing 404, empty 400, bad role 400)
+OK    users: administrator cannot change self (409)
+OK    users: main admin promotes customer3 to admin
+OK    second admin: not main, can open list
+OK    second admin: cannot appoint admins (403)
+OK    second admin: cannot touch the main admin (403)
+OK    second admin: manages managers (role, block, unblock)
+OK    second admin: cannot demote or block another admin (403)
+OK    main admin demotes both admins back
+OK    block: 200 and blocked user cannot log in
+OK    unblock: login works again
+OK    db: second main administrator rejected by unique index
+
+== admin: statistics
+OK    stats: default period is last 30 days
+OK    stats: byStatus lists every status and sums to total
+OK    stats: users block matches DB
+OK    stats: revenue matches DB
+OK    stats: byDay revenue sums to total
+OK    stats: bad periods and dates give 400
+OK    stats: empty period gives zeros and 3 days
+OK    stats: paid order adds its total to revenue
+OK    stats: cancelled order leaves revenue
+
+== profile
+OK    profile: register
+OK    profile: login and refresh work
+OK    profile: no token 401, empty body 400, empty name 400, bad phone 400
+OK    profile: rename visible in /auth/me
+OK    profile: phone saved, name kept
+OK    profile: empty phone becomes NULL
+OK    password: no token 401, wrong current 400, short 400, same 400
+OK    password: old password still works after refusals
+OK    password: change 200
+OK    password: old login rejected, new login works
+OK    password: old session revoked
+OK    password: stored as hash
+
+== rate limit
+OK    login limit: first attempts are 401
+OK    login limit: 429 appears
+OK    login limit: backend alive afterwards
+
+== cleanup and restore
+OK    restored: rate and commission
+OK    restored: tariffs 1..3 active, tariff 3 unbounded
+OK    restored: personal lists identical
+OK    restored: no test data left
