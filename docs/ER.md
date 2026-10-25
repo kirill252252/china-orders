@@ -7,6 +7,8 @@ erDiagram
     USERS ||--o| CARTS : "owns"
     USERS ||--o{ ORDERS : "places"
     USERS ||--o{ ORDER_STATUS_HISTORY : "changes_by"
+    USERS ||--o{ USER_PRODUCTS : "personal_list"
+    PRODUCTS ||--o{ USER_PRODUCTS : "in_lists"
     ADDRESSES ||--o{ ORDERS : "shipping_address"
     MARKETPLACES ||--o{ PRODUCTS : "lists"
     PRODUCTS ||--o{ CART_ITEMS : "in"
@@ -18,6 +20,8 @@ erDiagram
     ORDERS ||--o{ SHIPMENTS : "shipped_via"
     ORDER_STATUSES ||--o{ ORDERS : "current_status"
     ORDER_STATUSES ||--o{ ORDER_STATUS_HISTORY : "status"
+    ORDER_STATUSES ||--o{ ORDER_STATUS_TRANSITIONS : "from_status"
+    ORDER_STATUSES ||--o{ ORDER_STATUS_TRANSITIONS : "to_status"
     EXCHANGE_RATES ||--o{ ORDERS : "rate_snapshot"
     DELIVERY_TARIFFS ||--o{ ORDERS : "tariff_snapshot"
 
@@ -36,6 +40,7 @@ erDiagram
         varchar phone
         int role_id FK
         boolean is_active
+        boolean is_super_admin
         timestamptz created_at
         timestamptz updated_at
     }
@@ -80,6 +85,12 @@ erDiagram
         boolean is_active
         timestamptz created_at
         timestamptz updated_at
+    }
+
+    USER_PRODUCTS {
+        bigint user_id PK, FK
+        bigint product_id PK, FK
+        timestamptz created_at
     }
 
     CARTS {
@@ -143,6 +154,11 @@ erDiagram
         timestamptz created_at
     }
 
+    ORDER_STATUS_TRANSITIONS {
+        int from_status_id PK, FK
+        int to_status_id PK, FK
+    }
+
     ORDER_STATUS_HISTORY {
         int id PK
         int order_id FK
@@ -204,7 +220,28 @@ erDiagram
         timestamptz created_at
         timestamptz updated_at
     }
+
+    SETTINGS {
+        varchar key PK
+        varchar value
+    }
+
+    SCHEMA_MIGRATIONS {
+        bigint id PK
+        varchar name
+        timestamptz applied_at
+    }
 ```
+
+Таблицы `SETTINGS` и `SCHEMA_MIGRATIONS` с остальными не связаны: это настройки «ключ-значение» и служебный журнал применённых миграций.
+
+## Представления (не таблицы)
+
+| Представление | Назначение |
+|---------------|-----------|
+| `v_customer_orders` | список заказов покупателя (номер, статус, сумма, число позиций, даты этапов) |
+| `v_manager_queue` | очередь менеджера: заказы в статусах «Ожидает оплаты», «Оплачен», «Выкуплен» |
+| `v_orders_summary` | сводка по статусам: число заказов, суммарная выручка, средний чек, среднее время от создания до оплаты и от оплаты до доставки в днях |
 
 ## Составные ограничения уникальности (не показаны в диаграмме)
 
@@ -213,6 +250,17 @@ erDiagram
 | `products` | `UNIQUE (marketplace_id, external_id)` |
 | `cart_items` | `UNIQUE (cart_id, product_id, selected_attributes)` |
 | `exchange_rates` | `UNIQUE (base_currency, target_currency, valid_from)` |
+| `user_products` | `PRIMARY KEY (user_id, product_id)` |
+| `order_status_transitions` | `PRIMARY KEY (from_status_id, to_status_id)` |
+| `users` | частичный уникальный индекс `ux_users_single_super_admin` по `is_super_admin` при значении true: не более одного главного администратора |
+
+## Прочие ограничения
+
+| Таблица | Ограничение |
+|---------|-------------|
+| `users` | `CHECK (NOT is_super_admin OR is_active)`: главный администратор не может быть неактивен |
+| `user_products` | внешние ключи на `users` и `products` с `ON DELETE CASCADE` |
+| `order_status_transitions` | внешние ключи на `order_statuses` с `ON DELETE RESTRICT` |
 
 ## Значения по умолчанию (не показаны в диаграмме)
 
@@ -221,26 +269,33 @@ erDiagram
 | `order_status_history` | `created_at` | `now()` |
 | `orders` | `status_id` | `1` (new) |
 | `users` | `is_active` | `true` |
+| `users` | `is_super_admin` | `false` |
 | `addresses` | `is_default` | `false` |
 | `products` | `is_active` | `true` |
 | `marketplaces` | `is_active` | `true` |
 | `exchange_rates` | `is_active` | `true` |
 | `delivery_tariffs` | `is_active` | `true` |
+| `user_products` | `created_at` | `now()` |
+| `schema_migrations` | `applied_at` | `now()` |
 
 ## Пояснения к нормализации (3НФ)
 
-1. **Users** — только атрибуты пользователя. Роли вынесены в справочник `roles`.
+1. **Users** — только атрибуты пользователя. Роли вынесены в справочник `roles`. Признак `is_super_admin` ограничен индексом и CHECK на уровне БД.
 2. **Addresses** — отдельная таблица, пользователь может иметь несколько адресов (доставка, биллинг). Связь с заказами через `shipping_address_id`.
 3. **Marketplaces** — справочник маркетплейсов, расширяем без миграций схемы.
 4. **Products** — товары, привязанные к маркетплейсу. `external_id` уникален в рамках маркетплейса. Цена и вес хранятся для расчётов.
-5. **Carts / Cart_items** — классическая корзина. `price_cny_at_add` фиксирует цену на момент добавления. Одна корзина на пользователя (`users ||--o| carts`).
-6. **Orders / Order_items** — заказы и позиции. Все денежные/весовые показатели зафиксированы на момент оформления (история не меняется при смене курса/цены товара). **Денормализация снимков:** `exchange_rate_used`, `commission_percent`, `delivery_cost_rub`, `total_rub` хранятся копиями; FK `exchange_rate_id`, `delivery_tariff_id` указывают на справочники для аудита.
-7. **Order_statuses** — справочник статусов с флагами `is_final`, `is_cancelled` для логики переходов.
-8. **Order_status_history** — полный **аудит** смены статусов (кто, когда, комментарий). Заполняется триггером.
-9. **Payments** — платёжные попытки, поддержка нескольких попыток/возвратов. Связь только с `orders` (нет прямой связи с `users`).
-10. **Shipments** — логистика: трек-номер, перевозчик, вес, даты.
-11. **Exchange_rates** — история курсов. `valid_from`/`valid_until` позволяют знать курс на любую дату.
-12. **Delivery_tariffs** — тарифы доставки по весовым интервалам. `max_weight_kg` может быть NULL (нет верхнего лимита).
+5. **User_products** — связь «многие ко многим» между пользователями и товарами (личный список). Выделена в отдельную таблицу, чтобы один товар мог входить в списки разных пользователей без дублирования. Удаление из списка удаляет только связь.
+6. **Carts / Cart_items** — классическая корзина. `price_cny_at_add` фиксирует цену на момент добавления. Одна корзина на пользователя (`users ||--o| carts`).
+7. **Orders / Order_items** — заказы и позиции. Все денежные/весовые показатели зафиксированы на момент оформления (история не меняется при смене курса/цены товара). **Денормализация снимков:** `exchange_rate_used`, `commission_percent`, `delivery_cost_rub`, `total_rub` хранятся копиями; FK `exchange_rate_id`, `delivery_tariff_id` указывают на справочники для аудита.
+8. **Order_statuses** — справочник статусов с флагами `is_final`, `is_cancelled` для логики переходов.
+9. **Order_status_transitions** — справочник допустимых переходов между статусами. Правила хранятся данными, а не кодом, их читает триггер, блокирующий недопустимые переходы.
+10. **Order_status_history** — полный **аудит** смены статусов (кто, когда, комментарий). Заполняется триггером.
+11. **Payments** — платёжные попытки, поддержка нескольких попыток/возвратов. Связь только с `orders` (нет прямой связи с `users`).
+12. **Shipments** — логистика: трек-номер, перевозчик, вес, даты.
+13. **Exchange_rates** — история курсов. `valid_from`/`valid_until` позволяют знать курс на любую дату.
+14. **Delivery_tariffs** — тарифы доставки по весовым интервалам. `max_weight_kg` может быть NULL (нет верхнего лимита).
+15. **Settings** — настройки «ключ-значение» (сейчас комиссия по умолчанию). Отдельная таблица вместо констант в коде позволяет менять значения без релиза.
+16. **Schema_migrations** — служебный журнал применённых SQL-миграций.
 
 ## Типы данных — соглашения
 
@@ -252,5 +307,5 @@ erDiagram
 | Проценты | `numeric(5,2)` | `commission_percent` |
 | Время | `timestamptz` | все `created_at`, `updated_at`, даты заказа |
 | JSON | `jsonb` | `images`, `attributes`, `selected_attributes`, `metadata` |
-| Идентификаторы | `int` (PK/FK) | `id`, `*_id` |
+| Идентификаторы | `int` или `bigint` | `id`, `*_id` (точные типы в DB.md) |
 | Коды/статусы | `varchar` | `code`, `status`, `type` |
