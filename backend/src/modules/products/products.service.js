@@ -118,7 +118,10 @@ export async function importProduct(url, userId) {
   const provider = getProvider();
   const parsed = provider.parseUrl(url);
   if (!parsed) {
-    throw AppError.badRequest('Не удалось распознать ссылку');
+    const reason = typeof provider.explainFailure === 'function'
+      ? provider.explainFailure(url)
+      : 'Не удалось распознать ссылку';
+    throw AppError.badRequest(reason);
   }
 
   // Находим marketplace_id по коду

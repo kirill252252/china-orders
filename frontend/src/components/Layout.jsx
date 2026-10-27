@@ -1,14 +1,16 @@
 // Общий каркас: шапка с меню по роли, область страницы, подвал.
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { BRAND } from '../content/brand.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLE_LABEL } from '../utils/roles.js';
+import { clearDraft } from '../utils/draft.js';
 
 const HOME = { to: '/', label: 'Главная', end: true };
 const CATALOG = { to: '/catalog', label: 'Товары' };
 const CALC = { to: '/calculator', label: 'Калькулятор' };
 const NAV = {
   guest: [HOME, CATALOG, CALC],
-  customer: [HOME, { to: '/catalog', label: 'Мои товары' }, { to: '/cart', label: 'Корзина' }, { to: '/orders', label: 'Мои заказы' }, CALC],
+  customer: [HOME, { to: '/cart', label: 'Корзина' }, { to: '/orders', label: 'Мои заказы' }, CALC],
   manager: [{ to: '/manager', label: 'Заказы' }, CATALOG, CALC],
   admin: [{ to: '/admin', label: 'Админка' }, { to: '/manager', label: 'Заказы' }, CATALOG, CALC],
 };
@@ -19,6 +21,8 @@ export default function Layout() {
   const items = NAV[user?.role] || NAV.guest;
 
   async function onLogout() {
+    // Черновик формы не должен остаться на общем компьютере
+    if (user) clearDraft(user.id);
     await logout();
     navigate('/login');
   }
@@ -28,7 +32,7 @@ export default function Layout() {
       <header className="header">
         <div className="container header-inner">
           <Link to="/" className="brand">
-            China Orders
+            {BRAND}
           </Link>
           <nav className="nav">
             {items.map((item) => (
@@ -69,7 +73,15 @@ export default function Layout() {
       </main>
 
       <footer className="footer">
-        <div className="container muted">China Orders: заказы с китайских маркетплейсов</div>
+        <div className="container footer-inner">
+          <span className="muted">{BRAND}: заказы с китайских маркетплейсов</span>
+          <nav className="footer-links" aria-label="Документы">
+            <Link to="/docs/prohibited">Запрещённые товары</Link>
+            <Link to="/docs/offer">Оферта</Link>
+            <Link to="/docs/privacy">Конфиденциальность</Link>
+            <Link to="/docs">Все документы</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );

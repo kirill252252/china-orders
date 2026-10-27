@@ -616,3 +616,61 @@ h3 {
 .alert-info { background: var(--accent-soft); color: var(--accent); }
 a.user-name { color: inherit; text-decoration: none; }
 a.user-name:hover { color: var(--accent); }
+
+/* ---------- Корзина: шаги, пустое состояние, подборка ---------- */
+.steps { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; }
+.step { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+.step b { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+.step.active { color: var(--accent); font-weight: 500; }
+.step.active b { background: var(--accent-soft); border-color: var(--accent); }
+.step.done { color: var(--text); }
+.step.done b { background: var(--success-soft); border-color: var(--success); color: var(--success); }
+.step-line { flex: 1; border-top: 1px solid var(--border); min-width: 16px; }
+
+.cart-empty { text-align: center; padding: 28px 20px; }
+.cart-empty .link-form { max-width: 600px; margin: 16px auto 12px; }
+.cart-empty .chips,
+.cart-empty .row { justify-content: center; }
+
+.suggest { margin-top: 20px; }
+.suggest-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.suggest-head h2 { font-size: 16px; margin: 0; }
+.mini-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.mini { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.mini-thumb { width: 44px; height: 44px; border-radius: 6px; overflow: hidden; flex: none; }
+.mini-thumb .product-img { aspect-ratio: auto; height: 100%; }
+.mini-thumb .img-placeholder { font-size: 18px; }
+.mini-body { min-width: 0; flex: 1; }
+.mini-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.calc-details { margin: 10px 0 4px; border-top: 1px solid var(--border); padding-top: 8px; }
+.calc-details summary { cursor: pointer; font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+.cart-add .link-form { margin: 0; }
+
+/* ---------- Документы и подвал ---------- */
+.footer-inner { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.footer-links a { color: var(--muted); text-decoration: none; }
+.footer-links a:hover { color: var(--accent); }
+
+.docs-layout { display: grid; gap: 20px; grid-template-columns: 260px minmax(0, 1fr); align-items: start; }
+@media (max-width: 760px) { .docs-layout { grid-template-columns: 1fr; } }
+.docs-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 72px; }
+@media (max-width: 760px) { .docs-nav { position: static; } }
+.docs-nav h2 { font-size: 16px; margin-bottom: 8px; }
+.docs-nav a { padding: 6px 10px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 14px; }
+.docs-nav a:hover { background: var(--bg); color: var(--text); }
+.docs-nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.docs-body h2 { font-size: 18px; margin: 20px 0 8px; }
+.docs-body p, .docs-body li { max-width: 72ch; }
+
+/* ---------- Форма добавления товара ---------- */
+.pills { display: flex; gap: 8px; }
+.pill { padding: 6px 18px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font: inherit; cursor: pointer; }
+.pill.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+.light { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+.light a { font-size: 13px; color: inherit; }
+.light-ok { background: var(--success-soft); color: var(--success); }
+.light-limited { background: var(--warning-soft); color: var(--warning); }
+.light-banned { background: var(--danger-soft); color: var(--danger); }

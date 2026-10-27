@@ -25,7 +25,8 @@ export const productIdSchema = z.object({
 // Схема импорта товара по ссылке
 export const importSchema = z.object({
   body: z.object({
-    url: z.string().url().max(2048, 'URL не должен превышать 2048 символов'),
+    // Принимаем и текст со ссылкой внутри: адрес выделяет и проверяет провайдер
+    url: z.string().trim().min(1, 'Вставьте ссылку на товар').max(2048, 'Текст не должен превышать 2048 символов'),
   }),
 });
 

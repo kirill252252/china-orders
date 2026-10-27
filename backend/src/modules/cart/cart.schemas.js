@@ -7,12 +7,28 @@ export const cartGetSchema = z.object({
   query: z.object({}),
 });
 
+// Свойства позиции: новые ключи проверяются, остальные (цвет, размер) проходят как есть
+const attributesSchema = z
+  .object({
+    category: z.string().regex(/^[a-z_]{1,40}$/, 'Некорректная категория').optional(),
+    battery: z.enum(['yes', 'no']).optional(),
+    link: z
+      .string()
+      .max(1000, 'Ссылка слишком длинная')
+      .refine((v) => /^https?:\/\/\S+$/i.test(v), 'Ссылка должна начинаться с http:// или https://')
+      .optional(),
+    note: z.string().max(300, 'Заметка не более 300 символов').optional(),
+  })
+  .passthrough()
+  .optional()
+  .default({});
+
 // Схема тела запроса добавления товара в корзину
 export const cartItemSchema = z.object({
   body: z.object({
     productId: z.string().regex(/^\d+$/, 'ID товара должен быть числом'),
     quantity: z.coerce.number().int().min(1).max(99),
-    selectedAttributes: z.object({}).passthrough().optional().default({}),
+    selectedAttributes: attributesSchema,
   }),
 });
 
